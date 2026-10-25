@@ -1,7 +1,7 @@
 {
   lib,
   stdenv,
-  fetchzip,
+  fetchurl,
   gtk3,
   zlib,
   alsa-lib,
@@ -24,6 +24,7 @@
   libsm,
   libice,
   ffmpeg,
+  unzip,
   writeShellScript,
   makeWrapper,
   imagemagick,
@@ -59,12 +60,13 @@ stdenv.mkDerivation (finalAttrs: {
   pname = "MajdataX";
   version = "6.2.0-linux-x64-video-patched";
 
-  src = fetchzip {
+  src = fetchurl {
     url = "https://github.com/XajilX/MajdataViewX/releases/download/v${finalAttrs.version}/MajdataX-v${finalAttrs.version}.zip";
-    hash = "sha256-y38gSrDeYObh3BvKW3eDPbcYmDZFLWDIwrQGtd7CjEA=";
+    hash = "sha256-7MrpIcrk0nqLtR4AZnrpk7X+50+cZlMrBzr/N9uyyuI=";
   };
 
   nativeBuildInputs = [
+    unzip
     imagemagick
     makeWrapper
   ];
@@ -105,7 +107,7 @@ stdenv.mkDerivation (finalAttrs: {
 
       mkdir -p "$out/libexec/MajdataX"
       APP_PATH=$out/libexec/MajdataX
-      cp -r $src/* "$APP_PATH"
+      cp -a ./. $APP_PATH/
       rm -f "$APP_PATH/crash.log"
       rm -f "$APP_PATH/completions.json"
       rm -f "$APP_PATH/editor.db"
@@ -116,7 +118,7 @@ stdenv.mkDerivation (finalAttrs: {
       install -Dm644 "$desktopItem/share/applications/MajdataEdit-Neo.desktop" "$out/share/applications/MajdataEdit-Neo.desktop"
       for i in 16 24 48 64 96 128 256 512; do
         mkdir -p $out/share/icons/hicolor/''${i}x''${i}/apps
-        magick $src/salt.png -background none -resize ''${i}x''${i} $out/share/icons/hicolor/''${i}x''${i}/apps/majdatax.png
+        magick salt.png -background none -resize ''${i}x''${i} $out/share/icons/hicolor/''${i}x''${i}/apps/majdatax.png
       done
 
       mkdir -p "$out/bin"
