@@ -94,36 +94,23 @@ stdenv.mkDerivation (finalAttrs: {
 
   installPhase =
     let
-      writables = [
-        "Settings.json"
-        "crash.log"
-        "editor.db"
-        "completions.json"
-        ".autosave"
-      ];
-      setup = writeShellScript "majdatax-user-setup" ''
-        MAJDATAX_DATA_DIR="''${XDG_DATA_HOME:-$HOME/.local/share}/MajdataX"
-        mkdir -p $MAJDATAX_DATA_DIR
-
-        for file in ${lib.escapeShellArgs writables}; do
-          if [ ! -e "$MAJDATAX_DATA_DIR/$file" ]; then
-            cp -r "$APP_PATH/$file" "$MAJDATAX_DATA_DIR/$file"
-            chmod u+w "$MAJDATAX_DATA_DIR/$file"
-          fi
-        done
+      startup = writeShellScript "majdatax-startup" ''
+        DATA_PATH=''${XDG_DATA_HOME:-$HOME/.local/share}/MajdataX
+        mkdir -p $DATA_PATH/rwdir
+        mkdir -p $DATA_PATH/workdir
       '';
-      bindArgs = lib.concatMapStringsSep " " (
-        file: ''--bind "$MAJDATAX_DATA_DIR/${file}" "$APP_PATH/${file}"''
-      ) writables;
     in
     ''
       runHook preInstall
 
       mkdir -p "$out/libexec/MajdataX"
-      cp -r $src/* "$out/libexec/MajdataX/"
-      touch "$out/libexec/MajdataX/crash.log"
-      touch "$out/libexec/MajdataX/completions.json"
-      mkdir -p "$out/libexec/MajdataX/.autosave"
+      APP_PATH=$out/libexec/MajdataX
+      cp -r $src/* "$APP_PATH"
+      rm -f "$APP_PATH/crash.log"
+      rm -f "$APP_PATH/completions.json"
+      rm -f "$APP_PATH/editor.db"
+      rm -f "$APP_PATH/Settings.json"
+      rm -rf "$APP_PATH/.autosave"
 
       mkdir -p "$out/share"
       install -Dm644 "$desktopItem/share/applications/MajdataEdit-Neo.desktop" "$out/share/applications/MajdataEdit-Neo.desktop"
@@ -136,13 +123,16 @@ stdenv.mkDerivation (finalAttrs: {
       makeWrapper "$out/libexec/MajdataX/MajdataViewX" "$out/bin/MajdataViewX" \
         --set LD_LIBRARY_PATH "${lib.makeLibraryPath unityDeps}"
       makeWrapper "${lib.getExe bubblewrap}" "$out/bin/MajdataEdit-Neo" \
-        --set APP_PATH "$out/libexec/MajdataX" \
+        --set APP_PATH $out/libexec/MajdataX \
         --set DOTNET_ROOT "${dotnet-runtime_10}/share/dotnet" \
         --set LD_LIBRARY_PATH "${lib.makeLibraryPath (avaloniaDeps ++ unityDeps)}" \
-        --run 'source ${setup}' \
+        --run ${startup} \
         --add-flags '--bind / / \
           --dev-bind /dev /dev \
-          ${bindArgs} \
+          --overlay-src $APP_PATH \
+          --overlay ''${XDG_DATA_HOME:-$HOME/.local/share}/MajdataX/rwdir \
+            ''${XDG_DATA_HOME:-$HOME/.local/share}/MajdataX/workdir \
+            $APP_PATH \
           -- "$APP_PATH/MajdataEdit-Neo"
         '
 
