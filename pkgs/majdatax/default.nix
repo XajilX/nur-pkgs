@@ -146,10 +146,7 @@ stdenv.mkDerivation (finalAttrs: {
     platforms = [
       "x86_64-linux"
     ];
-    license = [
-      "mit"
-      "unfree" # as it uses libbass
-    ];
+    license = "unfree"; # because libbass.so is used
   };
 
 })
