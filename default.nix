@@ -24,5 +24,6 @@
   fuzzel-powermenu-niri = pkgs.callPackage ./pkgs/fuzzel-powermenu-niri { };
   game-udev-rules = pkgs.callPackage ./pkgs/game-udev-rules { };
   probe-rs-udev-rules = pkgs.callPackage ./pkgs/probe-rs-udev-rules { };
+  majdatax = pkgs.callPackage ./pkgs/majdatax { };
   # ...
 }
