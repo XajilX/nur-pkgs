@@ -55,6 +55,8 @@
     vulkan-loader
     wayland
   ],
+  sfx ? null,
+  skin ? null,
 }:
 stdenv.mkDerivation (finalAttrs: {
   pname = "MajdataX";
@@ -101,6 +103,28 @@ stdenv.mkDerivation (finalAttrs: {
         mkdir -p $DATA_PATH/rwdir
         mkdir -p $DATA_PATH/workdir
       '';
+      sfxSetUp =
+        if sfx != null then
+          if (lib.isPath sfx) then
+            ''
+              rm -rf "$APP_PATH/SFX"
+              ln -s ${sfx} "$APP_PATH/SFX"
+            ''
+          else
+            builtins.throw "SFX should be null or a path to a SFX directory"
+        else
+          "";
+      skinSetUp =
+        if skin != null then
+          if (lib.isPath skin) then
+            ''
+              rm -rf "$APP_PATH/Skin"
+              ln -s ${skin} "$APP_PATH/Skin"
+            ''
+          else
+            builtins.throw "Skin should be null or a derivation to a Skin directory"
+        else
+          "";
     in
     ''
       runHook preInstall
@@ -113,6 +137,8 @@ stdenv.mkDerivation (finalAttrs: {
       rm -f "$APP_PATH/editor.db"
       rm -f "$APP_PATH/Settings.json"
       rm -rf "$APP_PATH/.autosave"
+      ${sfxSetUp}
+      ${skinSetUp}
 
       mkdir -p "$out/share"
       install -Dm644 "$desktopItem/share/applications/MajdataEdit-Neo.desktop" "$out/share/applications/MajdataEdit-Neo.desktop"
