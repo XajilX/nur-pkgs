@@ -13,7 +13,7 @@ in
 
 stdenvNoCC.mkDerivation {
   pname = "leigod";
-  version = "1.3.0.01";
+  version = "1.3.0.02";
 
   src = ./src;
 
@@ -23,7 +23,7 @@ stdenvNoCC.mkDerivation {
     let
       binary = fetchurl {
         url = baseUrl + binaryName;
-        hash = "sha256-+B7Gp+GlvO+MuNG/IzFB7OfVQlCIFCLswoFMmN+BniM=";
+        hash = "sha256-NkDUerruSmtDEuNIkTcxGrMJ0n3LkqtkDA/j2VMyjBs=";
       };
       ipdb = fetchurl {
         url = baseUrl + ipdbName;
