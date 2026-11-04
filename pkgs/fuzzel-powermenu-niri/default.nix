@@ -14,7 +14,7 @@ writeTextFile {
 
     case $SELECTION in
       *"Lock")
-        ${swaylock};;
+        ${lib.getExe swaylock};;
       *"Suspend")
         systemctl suspend;;
       *"Log out")
