@@ -60,11 +60,11 @@
 }:
 stdenv.mkDerivation (finalAttrs: {
   pname = "MajdataX";
-  version = "6.2.0-linux-x64-video-patched";
+  version = "6.2.0-linux-x64-render-patched";
 
   src = fetchurl {
     url = "https://github.com/XajilX/MajdataViewX/releases/download/v${finalAttrs.version}/MajdataX-v${finalAttrs.version}.zip";
-    hash = "sha256-7MrpIcrk0nqLtR4AZnrpk7X+50+cZlMrBzr/N9uyyuI=";
+    hash = "sha256-5fKIGPNVoHMcX6R4m3VA60dphZsrzWdJnix4huBpiLk=";
   };
 
   nativeBuildInputs = [
