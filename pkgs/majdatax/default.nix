@@ -29,17 +29,20 @@
   makeWrapper,
   imagemagick,
   bubblewrap,
+  patchelf,
   makeDesktopItem,
   avaloniaDeps ? [
+    stdenv.cc.cc.lib
     fontconfig.lib
     libx11
     libsm
     libice
   ],
   unityDeps ? [
+    stdenv.cc.cc.lib
+    fontconfig.lib
     alsa-lib
     gtk3
-    (lib.getLib stdenv.cc.cc)
     zlib
     dbus
     libGL
@@ -64,10 +67,11 @@ stdenv.mkDerivation (finalAttrs: {
 
   src = fetchurl {
     url = "https://github.com/XajilX/MajdataViewX/releases/download/v${finalAttrs.version}/MajdataX-v${finalAttrs.version}.zip";
-    hash = "sha256-5fKIGPNVoHMcX6R4m3VA60dphZsrzWdJnix4huBpiLk=";
+    hash = "sha256-ajb0AwUgdrpbrXtm0LYFZw/QqfDk83BOIrEN42Ve6Mk=";
   };
 
   nativeBuildInputs = [
+    patchelf
     unzip
     imagemagick
     makeWrapper
@@ -82,7 +86,6 @@ stdenv.mkDerivation (finalAttrs: {
 
   dontBuild = true;
   dontStrip = true;
-  dontPatchELF = true;
 
   desktopItem = makeDesktopItem {
     name = "MajdataEdit-Neo";
@@ -99,9 +102,9 @@ stdenv.mkDerivation (finalAttrs: {
   installPhase =
     let
       startup = writeShellScript "majdatax-startup" ''
-        DATA_PATH=''${XDG_DATA_HOME:-$HOME/.local/share}/MajdataX
-        mkdir -p $DATA_PATH/rwdir
-        mkdir -p $DATA_PATH/workdir
+        DATA_PATH="''${XDG_DATA_HOME:-$HOME/.local/share}/MajdataX"
+        mkdir -p "$DATA_PATH/rwdir"
+        mkdir -p "$DATA_PATH/workdir"
       '';
       sfxSetUp =
         if sfx != null then
@@ -122,7 +125,7 @@ stdenv.mkDerivation (finalAttrs: {
               ln -s ${skin} "$APP_PATH/Skin"
             ''
           else
-            builtins.throw "Skin should be null or a derivation to a Skin directory"
+            builtins.throw "Skin should be null or a path to a Skin directory"
         else
           "";
     in
@@ -130,8 +133,8 @@ stdenv.mkDerivation (finalAttrs: {
       runHook preInstall
 
       mkdir -p "$out/libexec/MajdataX"
-      APP_PATH=$out/libexec/MajdataX
-      cp -a ./. $APP_PATH/
+      APP_PATH="$out/libexec/MajdataX"
+      cp -a ./. "$APP_PATH/"
       rm -f "$APP_PATH/crash.log"
       rm -f "$APP_PATH/completions.json"
       rm -f "$APP_PATH/editor.db"
@@ -147,20 +150,30 @@ stdenv.mkDerivation (finalAttrs: {
         magick salt.png -background none -resize ''${i}x''${i} $out/share/icons/hicolor/''${i}x''${i}/apps/majdatax.png
       done
 
+      patchelf --set-interpreter "${stdenv.cc.bintools.dynamicLinker}" \
+        --set-rpath '${lib.makeLibraryPath (avaloniaDeps ++ [ stdenv.cc.libc ])}:$ORIGIN' \
+        "$APP_PATH/MajdataEdit-Neo"
+
+      patchelf --set-interpreter "${stdenv.cc.bintools.dynamicLinker}" \
+        --set-rpath '${lib.makeLibraryPath (unityDeps ++ [ stdenv.cc.libc ])}:$ORIGIN' \
+        "$APP_PATH/MajdataViewX"
+
       mkdir -p "$out/bin"
       makeWrapper "$out/libexec/MajdataX/MajdataViewX" "$out/bin/MajdataViewX" \
-        --set LD_LIBRARY_PATH "${lib.makeLibraryPath unityDeps}"
+        --set LD_LIBRARY_PATH "${lib.makeLibraryPath unityDeps}" \
+        --prefix PATH : "${lib.makeBinPath [ ffmpeg ]}"
       makeWrapper "${lib.getExe bubblewrap}" "$out/bin/MajdataEdit-Neo" \
         --set APP_PATH $out/libexec/MajdataX \
+        --prefix PATH : "${lib.makeBinPath [ ffmpeg ]}" \
         --set DOTNET_ROOT "${dotnet-runtime_10}/share/dotnet" \
-        --set LD_LIBRARY_PATH "${lib.makeLibraryPath (avaloniaDeps ++ unityDeps)}" \
+        --set LD_LIBRARY_PATH "${lib.makeLibraryPath (unityDeps ++ avaloniaDeps)}" \
         --run ${startup} \
         --add-flags '--bind / / \
           --dev-bind /dev /dev \
-          --overlay-src $APP_PATH \
-          --overlay ''${XDG_DATA_HOME:-$HOME/.local/share}/MajdataX/rwdir \
-            ''${XDG_DATA_HOME:-$HOME/.local/share}/MajdataX/workdir \
-            $APP_PATH \
+          --overlay-src "$APP_PATH" \
+          --overlay "''${XDG_DATA_HOME:-$HOME/.local/share}/MajdataX/rwdir" \
+            "''${XDG_DATA_HOME:-$HOME/.local/share}/MajdataX/workdir" \
+            "$APP_PATH" \
           -- "$APP_PATH/MajdataEdit-Neo"
         '
 
@@ -174,7 +187,7 @@ stdenv.mkDerivation (finalAttrs: {
     platforms = [
       "x86_64-linux"
     ];
-    license = "unfree"; # because libbass.so is used
+    license = lib.licenses.unfree; # because libbass.so is used
   };
 
 })

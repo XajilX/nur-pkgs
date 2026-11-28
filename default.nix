@@ -9,6 +9,9 @@
 
 {
   pkgs ? import <nixpkgs> { },
+  pyproject-nix ? null,
+  uv2nix ? null,
+  pyproject-build-systems ? null,
 }:
 
 {
@@ -25,5 +28,12 @@
   game-udev-rules = pkgs.callPackage ./pkgs/game-udev-rules { };
   probe-rs-udev-rules = pkgs.callPackage ./pkgs/probe-rs-udev-rules { };
   majdatax = pkgs.callPackage ./pkgs/majdatax { };
+  astrbot = pkgs.callPackage ./pkgs/astrbot {
+    inherit
+      pyproject-nix
+      uv2nix
+      pyproject-build-systems
+      ;
+  };
   # ...
 }
